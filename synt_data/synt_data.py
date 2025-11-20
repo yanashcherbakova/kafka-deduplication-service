@@ -6,8 +6,8 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-pg_user = os.environ["POSTGRES_USER"]
-pg_pass = os.environ["POSTGRES_PASSWORD"]
+pg_user = os.getenv("POSTGRES_USER")
+pg_pass = os.getenv("POSTGRES_PASSWORD")
 
 conn = psycopg2.connect(
     dbname="users_db", user=pg_user, password=pg_pass, host="localhost", port=5432)

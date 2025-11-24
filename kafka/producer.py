@@ -19,14 +19,14 @@ conn = psycopg2.connect(
 cursor = conn.cursor()
 
 cursor.execute("""
-UPDATE user_logins
-    SET sent_to_kafka = TRUE
-    WHERE sent_to_kafka = FALSE
-    RETURNING id, username, event_type, extract(epoch FROM event_time);
+SELECT id, username, event_type, extract(epoch FROM event_time)
+        FROM user_logins
+        WHERE sent_to_kafka = FALSE;
 """)
+rows = cursor.fetchall()
 
-#Server-side cursor iteration --> README
-for row in cursor:
+sent_ids = []
+for row in rows:
     data = {
         "id" : row[0],
         "user" : row[1],
@@ -34,14 +34,24 @@ for row in cursor:
         "timestamp" : float(row[3])
     }
     producer.send("user_events", value=data)
+    sent_ids.append(row[0])
     print(f"Sent to Kafka - {data}")
     time.sleep(0.5)
+
+if sent_ids:
+    cursor.execute(
+        """
+        UPDATE user_logins
+        SET sent_to_kafka = TRUE
+        WHERE id = ANY(%s)
+        """, (sent_ids,)
+    )
 
 producer.flush()
 producer.close()
 print("Kafka send complete")
 
-conn.commit() #WHY HERE? --> README
+conn.commit()
 print("New logins --> sent_to_kafka = TRUE")
 
 cursor.close()

@@ -92,7 +92,7 @@ The Kafka producer will interact only with the new records
 
 ![new_synth_data](pic/new_synth_data.png)
 
-# 🗄️ Note about server-side (not used in this project)  
+# 🗄️ Note about server-side cursors (not used in this project)  
 
 In large production systems, a Kafka producer may process millions of database records.
 Loading all rows into memory at once ---> `fetchall()` <--- is not safe in such cases --> the memory footprint becomes unpredictable.

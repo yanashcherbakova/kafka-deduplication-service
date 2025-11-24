@@ -26,16 +26,16 @@ CREATE TABLE IF NOT EXISTS user_logins (
 fake = Faker()
 users = [fake.user_name() for _ in range(50)]
 
-for _ in range(100):
-    data = {
-        "user": random.choice(users),
-        "timestamp": time.time() - random.randint(0, 15 * 60)
-    }
+timestamps = [time.time() - random.randint(0, 15 * 60)for _ in range(100)]
+timestamps.sort()
+
+for ts in timestamps:
+    user = random.choice(users)
     cursor.execute(
         "INSERT INTO user_logins (username, event_time) VALUES (%s, to_timestamp(%s))",
-        (data["user"], data["timestamp"])
+        (user, ts)
     )
-    print(f'User - {data["user"]} logged at {data["timestamp"]}')
+    print(f'User - {user} logged at {ts}')
 conn.commit()
 
 cursor.close()

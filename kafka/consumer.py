@@ -10,6 +10,7 @@ click_pass = os.getenv("CLICKHOUSE_PASSWORD")
 
 consumer = KafkaConsumer(
     "user_events",
+    group_id="clickhouse_writer",
     auto_offset_reset='earliest',
     enable_auto_commit=True,
     value_deserializer=lambda x: json.loads(x.decode('utf-8'))
@@ -23,16 +24,18 @@ CREATE TABLE IF NOT EXISTS user_logins (
     username String,
     event_type String,
     event_time DateTime
-) ENGINE = MergeTree()
-ORDER BY event_time
+) ENGINE = ReplacingMergeTree()
+ORDER BY id
 """)
 
 for message in consumer:
     data = message.value
     print(f"[Kafka] Received - {data}")
-    client.command(
-        f"INSERT INTO user_logins (id, username, event_type, event_time) VALUES ({data['id']},'{data['user']}', '{data['event']}', toDateTime({data['timestamp']}))"
-    )
+    client.insert(
+        "user_logins",
+        [[data["id"], data["user"], data["event"], int(data["timestamp"])]],
+        column_names=["id", "username", "event_type", "event_time"]
+        )
     print(f"Migrated to [ClickHouse] - id={data['id']}")
 
 consumer.close()
